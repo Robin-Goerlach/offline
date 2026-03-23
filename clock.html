@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SASD – Analoge Uhr</title>
+  <meta name="description" content="Statische HTML-Seite mit analoger Uhr im SASD-Stil." />
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #111827;
+      --ring: #0f766e;
+      --ring-soft: #115e59;
+      --accent: #0891b2;
+      --text: #e5f2ef;
+      --muted: #9fb3b8;
+      --second: #34d399;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(15, 118, 110, 0.25), transparent 28%),
+        radial-gradient(circle at 80% 15%, rgba(8, 145, 178, 0.22), transparent 24%),
+        linear-gradient(160deg, #08101d 0%, #0b1220 45%, #0d1727 100%);
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+    }
+
+    .stage {
+      position: relative;
+      width: min(92vw, 760px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+    }
+
+    .glow {
+      position: absolute;
+      inset: 7%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(15,118,110,0.08) 0%, rgba(15,118,110,0.04) 45%, transparent 70%);
+      filter: blur(14px);
+      pointer-events: none;
+    }
+
+    .clock {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(255,255,255,0.05), transparent 30%),
+        radial-gradient(circle at 50% 50%, #172235 0%, #0f1828 52%, #0a1220 100%);
+      border: 10px solid rgba(15, 118, 110, 0.95);
+      box-shadow:
+        0 24px 70px var(--shadow),
+        inset 0 0 0 2px rgba(255,255,255,0.05),
+        inset 0 0 35px rgba(0,0,0,0.45);
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .clock::before {
+      content: "";
+      position: absolute;
+      inset: 16px;
+      border-radius: 50%;
+      border: 2px solid rgba(8, 145, 178, 0.22);
+      pointer-events: none;
+    }
+
+    .brand {
+      position: absolute;
+      top: 17%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: clamp(1.6rem, 3vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: 0.34em;
+      color: rgba(229, 242, 239, 0.95);
+      text-transform: uppercase;
+      z-index: 1;
+      text-shadow: 0 0 18px rgba(15,118,110,0.25);
+      user-select: none;
+    }
+
+    .numbers {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    .number {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 3rem;
+      height: 3rem;
+      margin: -1.5rem;
+      display: grid;
+      place-items: center;
+      font-size: clamp(1rem, 2vw, 1.35rem);
+      font-weight: 700;
+      color: rgba(229, 242, 239, 0.92);
+      text-shadow: 0 1px 8px rgba(0,0,0,0.45);
+      user-select: none;
+    }
+
+    .ticks {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .tick {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 2px;
+      height: 46%;
+      transform-origin: 50% 100%;
+      margin-left: -1px;
+      margin-top: -46%;
+      opacity: 0.95;
+    }
+
+    .tick::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(229, 242, 239, 0.45);
+    }
+
+    .tick.major::before {
+      width: 4px;
+      height: 18px;
+      background: rgba(229, 242, 239, 0.82);
+    }
+
+    .hands {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+
+    .hand {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform-origin: 50% calc(100% - 12px);
+      transform: translate(-50%, -100%) rotate(0deg);
+      border-radius: 999px;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+      will-change: transform;
+    }
+
+    .hour {
+      width: 10px;
+      height: 25%;
+      background: linear-gradient(180deg, #f4fffd 0%, #b8d7d6 100%);
+      z-index: 4;
+    }
+
+    .minute {
+      width: 7px;
+      height: 35%;
+      background: linear-gradient(180deg, #dff8f4 0%, #8ec7c3 100%);
+      z-index: 5;
+    }
+
+    .second {
+      width: 3px;
+      height: 40%;
+      background: linear-gradient(180deg, #7ff3cf 0%, var(--second) 100%);
+      z-index: 6;
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.45);
+    }
+
+    .second::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      bottom: 10px;
+      transform: translateX(-50%);
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--second);
+      box-shadow: 0 0 10px rgba(52, 211, 153, 0.5);
+    }
+
+    .pin {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 20px;
+      height: 20px;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #f8fffe 0%, #b9d9d7 38%, #0f766e 40%, #0a4e49 100%);
+      box-shadow: 0 0 0 4px rgba(11,18,32,0.85), 0 0 12px rgba(0,0,0,0.35);
+      z-index: 8;
+    }
+
+    .date-badge {
+      position: absolute;
+      right: 18%;
+      top: 46%;
+      transform: translateY(-50%);
+      min-width: 3.1rem;
+      padding: 0.35rem 0.5rem;
+      border-radius: 0.7rem;
+      text-align: center;
+      font-weight: 700;
+      font-size: clamp(0.8rem, 1.5vw, 0.95rem);
+      color: var(--text);
+      background: rgba(8, 14, 26, 0.82);
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+      z-index: 2;
+    }
+
+    .caption {
+      position: absolute;
+      top: 70%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      z-index: 1;
+      user-select: none;
+    }
+
+    @media (max-width: 560px) {
+      .clock { border-width: 8px; }
+      .number { width: 2.4rem; height: 2.4rem; margin: -1.2rem; }
+      .date-badge { right: 14%; }
+      .brand { top: 18%; letter-spacing: 0.25em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="glow"></div>
+
+    <section class="clock" aria-label="Analoge Uhr im SASD-Design">
+      <div class="brand">SASD</div>
+      <div class="ticks" id="ticks"></div>
+      <div class="numbers" id="numbers"></div>
+
+      <div class="date-badge" id="dateBadge">--</div>
+      <div class="caption">Scientific &amp; Software Development</div>
+
+      <div class="hands">
+        <div class="hand hour" id="hourHand"></div>
+        <div class="hand minute" id="minuteHand"></div>
+        <div class="hand second" id="secondHand"></div>
+        <div class="pin"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const numbersRoot = document.getElementById('numbers');
+    const ticksRoot = document.getElementById('ticks');
+    const hourHand = document.getElementById('hourHand');
+    const minuteHand = document.getElementById('minuteHand');
+    const secondHand = document.getElementById('secondHand');
+    const dateBadge = document.getElementById('dateBadge');
+
+    function createNumbers() {
+      const radius = 45;
+
+      for (let number = 1; number <= 12; number++) {
+        const el = document.createElement('div');
+        el.className = 'number';
+        el.textContent = number;
+
+        const angle = number * 30;
+        el.style.transform = `rotate(${angle}deg) translate(0, -${radius}%) rotate(-${angle}deg)`;
+
+        numbersRoot.appendChild(el);
+      }
+    }
+
+    function createTicks() {
+      for (let i = 0; i < 60; i++) {
+        const tick = document.createElement('div');
+        tick.className = i % 5 === 0 ? 'tick major' : 'tick';
+        tick.style.transform = `rotate(${i * 6}deg)`;
+        ticksRoot.appendChild(tick);
+      }
+    }
+
+    function setHandRotation(el, degrees) {
+      el.style.transform = `translate(-50%, -100%) rotate(${degrees}deg)`;
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const ms = now.getMilliseconds();
+      const seconds = now.getSeconds() + ms / 1000;
+      const minutes = now.getMinutes() + seconds / 60;
+      const hours = (now.getHours() % 12) + minutes / 60;
+
+      const secondDeg = seconds * 6;
+      const minuteDeg = minutes * 6;
+      const hourDeg = hours * 30;
+
+      setHandRotation(secondHand, secondDeg);
+      setHandRotation(minuteHand, minuteDeg);
+      setHandRotation(hourHand, hourDeg);
+
+      const day = String(now.getDate()).padStart(2, '0');
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const year = now.getFullYear();
+      dateBadge.textContent = `${day}.${month}.${year}`;
+
+      requestAnimationFrame(updateClock);
+    }
+
+    // createNumbers(); // Ziffern ausgeblendet
+    createTicks();
+    updateClock();
+  </script>
+</body>
+</html>
