@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="de" class="scroll-smooth">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SASD GmbH – Scientific & Software Development</title>
+  <meta name="description" content="SASD GmbH: Scientific & Software Development – Wir entwickeln Software, administrieren sichere Linux-Infrastrukturen, schulen Teams und beraten pragmatisch." />
+  <meta property="og:title" content="SASD GmbH – Scientific & Software Development" />
+  <meta property="og:description" content="Softwareentwicklung, Linux/Systemadministration, Trainings & Beratung – pragmatisch, sicher, Open Source first." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0f766e" />
+  
+  <!-- Tailwind CDN (keine Build-Chain notwendig) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ["Inter var", "Inter", "ui-sans-serif", "system-ui", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji"],
+          },
+          colors: {
+            brand: {
+              // Petrol / Teal-ähnliche Marke
+              50:  '#ecfdf5',
+              100: '#d1fae5',
+              200: '#a7f3d0',
+              300: '#6ee7b7',
+              400: '#34d399',
+              500: '#10b981',
+              600: '#0d9488', // primär dunkel
+              700: '#0f766e', // Header/Hero
+              800: '#115e59',
+              900: '#134e4a',
+            },
+            night: {
+              900: '#0b1220', // Navy-angehauchter Hintergrund
+              800: '#111827'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Sanfte, performante Deko-Elemente ohne fremde Bilder */
+    .blob { filter: blur(48px); opacity: .25; }
+  </style>
+</head>
+<body class="bg-night-900 text-slate-100">
+  <!-- Hintergrund-Deko -->
+  <div aria-hidden="true" class="fixed inset-0 -z-10 overflow-hidden">
+    <div class="blob absolute -top-24 -left-24 w-96 h-96 rounded-full bg-brand-700"></div>
+    <div class="blob absolute top-40 -right-16 w-96 h-96 rounded-full bg-cyan-600"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/5 bg-white/0 border-b border-white/10">
+    <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between">
+        <a href="#home" class="flex items-center gap-3 group">
+          <!-- Minimal Logo (SVG) -->
+          <svg class="h-8 w-8 text-brand-300 group-hover:text-brand-200 transition" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M3 12L12 3l9 9-9 9-9-9zm9-6.8L5.2 12 12 18.8 18.8 12 12 5.2z"/>
+          </svg>
+          <span class="font-semibold tracking-wide">SASD&nbsp;GmbH</span>
+        </a>
+        <button class="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-slate-200 hover:bg-white/10 focus:outline-none" aria-label="Menü öffnen" id="menuBtn">
+          <svg class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+        <ul class="hidden md:flex items-center gap-6 text-sm text-slate-200">
+          <li><a class="hover:text-white" href="#leistungen">Leistungen</a></li>
+          <li><a class="hover:text-white" href="#warum">Warum&nbsp;SASD</a></li>
+          <li><a class="hover:text-white" href="#projekte">Projekte</a></li>
+          <li><a class="hover:text-white" href="#kontakt">Kontakt</a></li>
+          <li><a class="rounded-lg bg-brand-700 hover:bg-brand-600 px-3 py-2 font-medium" href="#kontakt">Unverbindlich anfragen</a></li>
+        </ul>
+      </div>
+      <ul id="mobileMenu" class="md:hidden hidden flex-col gap-3 pb-4 text-sm text-slate-200">
+        <li><a class="block px-2 py-2 hover:bg-white/10 rounded" href="#leistungen">Leistungen</a></li>
+        <li><a class="block px-2 py-2 hover:bg-white/10 rounded" href="#warum">Warum SASD</a></li>
+        <li><a class="block px-2 py-2 hover:bg-white/10 rounded" href="#projekte">Projekte</a></li>
+        <li><a class="block px-2 py-2 hover:bg-white/10 rounded" href="#kontakt">Kontakt</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Hero -->
+  <section id="home" class="relative">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-20 lg:py-28">
+      <div class="grid lg:grid-cols-2 items-center gap-12">
+        <div>
+          <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            Open‑Source first · DSGVO bedacht · Linux‑Expertise
+          </span>
+          <h1 class="mt-6 text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
+            Scientific & Software Development – pragmatisch, sicher, schnell einsatzbereit.
+          </h1>
+          <p class="mt-4 text-slate-300 max-w-prose">
+            Wir entwickeln robuste Anwendungen, betreiben und härten Linux‑Infrastrukturen, 
+            schulen Teams und begleiten Projekte vom Proof‑of‑Concept bis in den Betrieb.
+          </p>
+          <div class="mt-8 flex flex-wrap items-center gap-3">
+            <a href="#kontakt" class="inline-flex items-center gap-2 rounded-lg bg-brand-700 hover:bg-brand-600 px-5 py-3 font-medium">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M2 6l10 7L22 6v12H2z"/></svg>
+              Projekt anfragen
+            </a>
+            <a href="#leistungen" class="inline-flex items-center gap-2 rounded-lg bg-white/10 hover:bg-white/20 px-5 py-3 font-medium">
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h10v2H4z"/></svg>
+              Leistungen ansehen
+            </a>
+          </div>
+        </div>
+        <!-- Hero Illustration (SVG statt Bilddatei) -->
+        <div class="relative">
+          <div class="absolute -inset-6 rounded-3xl bg-gradient-to-tr from-brand-800 to-cyan-700 opacity-30 blur-2xl"></div>
+          <svg viewBox="0 0 600 400" class="relative w-full h-auto drop-shadow-xl rounded-2xl ring-1 ring-white/10">
+            <defs>
+              <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="#0f766e"/>
+                <stop offset="100%" stop-color="#0891b2"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="600" height="400" fill="#0b1220"/>
+            <g>
+              <circle cx="120" cy="110" r="70" fill="url(#g)" opacity=".8"/>
+              <rect x="220" y="60" width="320" height="220" rx="14" fill="#0f172a" stroke="#1f2937"/>
+              <g opacity=".9">
+                <rect x="240" y="90" width="120" height="18" rx="4" fill="#0f766e"/>
+                <rect x="240" y="120" width="260" height="12" rx="3" fill="#1f8a88"/>
+                <rect x="240" y="140" width="220" height="12" rx="3" fill="#155e75"/>
+                <rect x="240" y="180" width="260" height="120" rx="8" fill="#0b1320" stroke="#1f2937"/>
+                <rect x="260" y="200" width="200" height="12" rx="3" fill="#1f8a88"/>
+                <rect x="260" y="220" width="180" height="12" rx="3" fill="#155e75"/>
+                <rect x="260" y="240" width="140" height="12" rx="3" fill="#0f766e"/>
+              </g>
+              <circle cx="470" cy="310" r="60" fill="url(#g)" opacity=".7"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Leistungen -->
+  <section id="leistungen" class="py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <h2 class="text-3xl md:text-4xl font-bold">Leistungen</h2>
+      <p class="mt-3 text-slate-300 max-w-prose">Fokussiert auf Wirkung statt 100‑seitiger Konzepte.</p>
+      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Softwareentwicklung -->
+        <article class="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+          <div class="flex items-center gap-3">
+            <svg class="h-6 w-6 text-brand-300" viewBox="0 0 24 24" fill="currentColor"><path d="M8 17l-5-5 5-5v10zm8-10l5 5-5 5V7z"/></svg>
+            <h3 class="font-semibold">Softwareentwicklung</h3>
+          </div>
+          <p class="mt-3 text-sm text-slate-300">Web‑ & Desktop‑Anwendungen, APIs, Integrationen. Clean Code, Tests, Automatisierung.</p>
+          <ul class="mt-3 space-y-1 text-xs text-slate-400 list-disc ms-5">
+            <li>JavaScript/TypeScript, C#, C/C++, Java</li>
+            <li>Datenbanken: PostgreSQL, MySQL, MS SQL</li>
+            <li>CI/CD, Container, Monitoring</li>
+          </ul>
+        </article>
+        <!-- Linux & Administration -->
+        <article class="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+          <div class="flex items-center gap-3">
+            <svg class="h-6 w-6 text-brand-300" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zm0 5h10v2H4zm0 5h16v2H4z"/></svg>
+            <h3 class="font-semibold">Linux & Systemadministration</h3>
+          </div>
+          <p class="mt-3 text-sm text-slate-300">Sichere Server, Netzwerk‑Härtung, Backups, Observability. On‑Prem & Cloud‑Hybrid.</p>
+          <ul class="mt-3 space-y-1 text-xs text-slate-400 list-disc ms-5">
+            <li>Proxmox/KVM, Ansible, Docker</li>
+            <li>Identity & Access, Netzwerk‑Segmentierung</li>
+            <li>Incident‑Response, Runbooks</li>
+          </ul>
+        </article>
+        <!-- Trainings -->
+        <article class="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+          <div class="flex items-center gap-3">
+            <svg class="h-6 w-6 text-brand-300" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6h16v2H4zM4 10h10v2H4zM4 14h16v2H4z"/></svg>
+            <h3 class="font-semibold">Trainings & Workshops</h3>
+          </div>
+          <p class="mt-3 text-sm text-slate-300">Hands‑on‑Formate für Entwicklung, Linux‑Betrieb, Security‑Basics & Team‑Enablement.</p>
+          <ul class="mt-3 space-y-1 text-xs text-slate-400 list-disc ms-5">
+            <li>Bootcamps & Inhouse‑Schulungen</li>
+            <li>Tooling & Best Practices</li>
+            <li>Mentoring & Review</li>
+          </ul>
+        </article>
+        <!-- Beratung -->
+        <article class="rounded-2xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+          <div class="flex items-center gap-3">
+            <svg class="h-6 w-6 text-brand-300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l4 7h7l-5.5 4 2.5 7-6-4.5L8.5 20 11 13 5 9h7z"/></svg>
+            <h3 class="font-semibold">Beratung & Projektunterstützung</h3>
+          </div>
+          <p class="mt-3 text-sm text-slate-300">Von der Idee zum MVP – schnell, messbar, budgettreu. Wir bleiben an Ihrer Seite.</p>
+          <ul class="mt-3 space-y-1 text-xs text-slate-400 list-disc ms-5">
+            <li>Architektur & Security‑By‑Design</li>
+            <li>DSGVO‑ & Open‑Source‑Strategien</li>
+            <li>Team‑Prozesse, Tool‑Auswahl</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Warum SASD -->
+  <section id="warum" class="py-20 bg-white/5">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-10 items-start">
+        <div>
+          <h2 class="text-3xl md:text-4xl font-bold">Warum SASD?</h2>
+          <p class="mt-3 text-slate-300 max-w-prose">Wir verbinden Wissenschafts‑Mindset mit pragmatischer Umsetzung. Kein Buzzword‑Bingo – nur Ergebnisse.</p>
+          <ul class="mt-6 space-y-4">
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19l11-11-1.5-1.5z"/></svg>
+              <div><strong>Open‑Source first.</strong> Unabhängig, auditierbar, kosteneffizient.</div>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19l11-11-1.5-1.5z"/></svg>
+              <div><strong>Sicherheit & DSGVO im Kern.</strong> Von Logging über Backups bis Zugriffskontrollen.</div>
+            </li>
+            <li class="flex items-start gap-3">
+              <svg class="mt-1 h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2l-3.5-3.5L4 14.2 9 19l11-11-1.5-1.5z"/></svg>
+              <div><strong>Transparente Zusammenarbeit.</strong> Klare Angebote, kurze Iterationen, nachvollziehbare Entscheidungen.</div>
+            </li>
+          </ul>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-night-800 p-6">
+          <h3 class="font-semibold">Technologien, mit denen wir arbeiten</h3>
+          <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-slate-300">
+            <div class="rounded-lg bg-white/5 p-3">Linux · Proxmox · Ansible</div>
+            <div class="rounded-lg bg-white/5 p-3">Docker · K8s (light) · CI/CD</div>
+            <div class="rounded-lg bg-white/5 p-3">JS/TS · React · Node.js</div>
+            <div class="rounded-lg bg-white/5 p-3">C# · .NET · Windows&nbsp;Forms</div>
+            <div class="rounded-lg bg-white/5 p-3">C/C++ · Fortran (Legacy)</div>
+            <div class="rounded-lg bg-white/5 p-3">PostgreSQL · MySQL · MS&nbsp;SQL</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Projekte (Showcase) -->
+  <section id="projekte" class="py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <h2 class="text-3xl md:text-4xl font-bold">Ausgewählte Projekte</h2>
+          <p class="mt-3 text-slate-300">Kurz und konkret – echte Wirkung im Fokus.</p>
+        </div>
+        <a href="#kontakt" class="hidden sm:inline-flex rounded-lg bg-white/10 hover:bg-white/20 px-4 py-2 text-sm">Projekt vorschlagen</a>
+      </div>
+      <div class="mt-8 grid md:grid-cols-3 gap-6">
+        <!-- Card 1 -->
+        <article class="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+          <div class="aspect-[16/9] bg-gradient-to-tr from-brand-800 to-cyan-700"></div>
+          <div class="p-5">
+            <h3 class="font-semibold">Monitoring‑Setup für Linux‑Cluster</h3>
+            <p class="mt-2 text-sm text-slate-300">Prometheus/Grafana, Log‑Aggregation, Alerting mit handfesten Runbooks – MTTR halbiert.</p>
+          </div>
+        </article>
+        <!-- Card 2 -->
+        <article class="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+          <div class="aspect-[16/9] bg-gradient-to-tr from-cyan-800 to-brand-700"></div>
+          <div class="p-5">
+            <h3 class="font-semibold">Wissensportal & Schulungen</h3>
+            <p class="mt-2 text-sm text-slate-300">Modulare Trainings zu Git, JS/Node, Linux‑Security; nachhaltige Enablement‑Strategie.</p>
+          </div>
+        </article>
+        <!-- Card 3 -->
+        <article class="group rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+          <div class="aspect-[16/9] bg-gradient-to-tr from-brand-700 to-emerald-700"></div>
+          <div class="p-5">
+            <h3 class="font-semibold">MVP für Daten‑Workflow</h3>
+            <p class="mt-2 text-sm text-slate-300">Kleine Services, klare APIs, saubere Logs – von Null zum Pilot in Wochen, nicht Monaten.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Über uns -->
+  <section id="ueber" class="py-20 bg-white/5">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-10 items-center">
+        <div>
+          <h2 class="text-3xl md:text-4xl font-bold">Über die SASD&nbsp;GmbH</h2>
+          <p class="mt-3 text-slate-300">Wir sind ein kleines, erfahrenes Team aus Entwickler‑ und Admin‑Herzen. 
+            Wir mögen klare Architekturen, gute Logs, reproduzierbare Deployments – und Lösungen, die morgen noch tragfähig sind.</p>
+          <p class="mt-3 text-slate-300">Unser Anspruch: <em>Realistisch planen, transparent liefern, verlässlich betreiben.</em></p>
+        </div>
+        <div class="rounded-2xl border border-white/10 bg-night-800 p-6">
+          <h3 class="font-semibold">Unsere Prinzipien</h3>
+          <ul class="mt-3 space-y-2 text-sm text-slate-300">
+            <li>🔒 Security‑by‑Default & Datenschutz ernst genommen</li>
+            <li>🧪 Testbarkeit, Automatisierung, Monitoring</li>
+            <li>🧭 Klare Verantwortlichkeiten, kurze Wege</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Kontakt / CTA -->
+  <section id="kontakt" class="py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-10">
+        <div>
+          <h2 class="text-3xl md:text-4xl font-bold">Lassen Sie uns sprechen</h2>
+          <p class="mt-3 text-slate-300">Schreiben Sie uns eine kurze Nachricht zu Ziel, Zeitrahmen und Kontext. Wir melden uns zügig.</p>
+          <div class="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6">
+            <dl class="grid sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <dt class="text-slate-400">E‑Mail</dt>
+                <dd><a class="text-brand-300 hover:underline" href="mailto:info@sasd-gmbh.de">info@sasd-gmbh.de</a></dd>
+              </div>
+              <div>
+                <dt class="text-slate-400">Sitz</dt>
+                <dd>Kleve · Niederrhein (DE)</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+        <form class="rounded-2xl border border-white/10 bg-white/5 p-6 space-y-4" action="mailto:info@sasd-gmbh.de" method="post">
+          <div>
+            <label class="block text-sm text-slate-300" for="name">Name</label>
+            <input id="name" name="name" required class="mt-1 w-full rounded-lg border border-white/10 bg-night-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300" for="email">E‑Mail</label>
+            <input id="email" name="email" type="email" required class="mt-1 w-full rounded-lg border border-white/10 bg-night-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-300" for="msg">Ihre Nachricht</label>
+            <textarea id="msg" name="message" rows="4" required class="mt-1 w-full rounded-lg border border-white/10 bg-night-800 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-600"></textarea>
+          </div>
+          <button class="w-full rounded-lg bg-brand-700 hover:bg-brand-600 px-4 py-2 font-medium">Absenden</button>
+          <p class="text-xs text-slate-400">Hinweis: Dieses Formular öffnet Ihr E‑Mail‑Programm (kein Server‑Backend).</p>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer mit Impressum/Datenschutz Platzhaltern -->
+  <footer class="border-t border-white/10">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-10 text-sm text-slate-400">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+        <p>© <span id="year"></span> SASD GmbH · Scientific & Software Development</p>
+        <nav class="flex items-center gap-4">
+          <a href="#impressum" class="hover:text-slate-200">Impressum</a>
+          <a href="#datenschutz" class="hover:text-slate-200">Datenschutz</a>
+        </nav>
+      </div>
+      <!-- Rechtliches (Platzhalter) -->
+      <div id="impressum" class="mt-10">
+        <h3 class="font-semibold text-slate-200">Impressum (Platzhalter)</h3>
+        <p class="mt-2">SASD GmbH · Musterstraße 1 · 47533 Kleve · Geschäftsführer: N. N. · USt‑IdNr.: DE&nbsp;…</p>
+      </div>
+      <div id="datenschutz" class="mt-8">
+        <h3 class="font-semibold text-slate-2 00">Datenschutz (Kurzfassung)</h3>
+        <p class="mt-2">Wir verarbeiten auf dieser statischen Seite keine personenbezogenen Daten außer denen, die Sie uns per E‑Mail senden. Keine Cookies, kein Tracking. Vollständige Erklärung folgt.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile Menü Toggle & Jahr
+    const btn = document.getElementById('menuBtn');
+    const menu = document.getElementById('mobileMenu');
+    btn?.addEventListener('click', () => menu.classList.toggle('hidden'));
+    document.getElementById('year').textContent = new Date().getFullYear();
+  </script>
+
+  <!--
+    ▶ Farbe & Typo
+      – Primär: Petrol/Teal (brand-700/600), Akzent: Cyan/Skies, Hintergrund: night-900
+      – Schrift: System/Inter – modern, gut lesbar.
+    ▶ Bilder
+      – Aktuell SVG/Gradients (eigenentwickelt, leichtgewichtig). Später ersetzbar durch generierte Illustrationen (z.B. "modern tech, teal/navy palette, abstract infrastructure").
+    ▶ Wo weiter ausbauen?
+      – Eigene Seiten: /leistungen.html, /ueber.html, /impressum.html, /datenschutz.html
+      – Blog/News (Optional), Mehrsprachigkeit (DE/EN), Analytics self‑hosted (Plausible/Matomo).
+  -->
+</body>
+</html>
