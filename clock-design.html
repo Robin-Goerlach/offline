@@ -1,0 +1,1030 @@
+<!doctype html>
+<!--
+I built you a fullscreen SVG analog watch as a single-file webpage (in the canvas on the right). It updates every second and shows today’s date in the lower part of the dial.
+About CPU/battery: this approach is light. It only updates small SVG transforms once per second 
+(no heavy re-render), and it automatically pauses when the tab is hidden. On modern devices 
+this should be well under 1% CPU most of the time. If you ever need it even lighter, you can: 
+drop the second hand or update every 2–5 seconds, reduce shadows/filters, or keep the 
+visibility pause I added (already in there).
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fullscreen SVG Analog Watch</title>
+  <style>
+    :root{
+      --bg1: #0f172a; /* slate-900 */
+      --bg2: #111827; /* gray-900 */
+      --accent: #38bdf8; /* sky-400 */
+      --tick: #94a3b8; /* slate-400 */
+      --face: #0b1220; /* darker */
+      --text: #e5e7eb; /* gray-200 */
+      --shadow: 0 40px 120px rgba(0,0,0,.45), inset 0 0 120px rgba(255,255,255,.03);
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% 20%, var(--bg2), var(--bg1));
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", "Noto Sans", sans-serif;
+    }
+    .wrap {
+      width: min(92vmin, 100vw);
+      aspect-ratio: 1/1;
+      display: grid;
+      place-items: center;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    /* Accessible preference: reduce shadows/animations if user prefers reduced motion */
+    @media (prefers-reduced-motion: reduce) {
+      svg { filter: none; }
+      .sweep { transition: none !important; }
+    }
+
+    .brand { font-weight: 600; letter-spacing: 2px; font-size: 6px; fill: var(--tick); }
+    .dateText { font-weight: 600; font-size: 8px; fill: var(--text); }
+    .numeral { font-weight: 700; font-size: 13px; fill: var(--text); }
+    .tick { stroke: var(--tick); stroke-linecap: round; }
+    .hand { stroke-linecap: round; }
+    .hand-hour { stroke: #e2e8f0; stroke-width: 2.8; }
+    .hand-minute { stroke: #cbd5e1; stroke-width: 2; }
+    .hand-second { stroke: var(--accent); stroke-width: 1.2; }
+    .hand-tail { stroke: var(--accent); stroke-width: 1; opacity: .6; }
+    .center-cap { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap" aria-label="Analog clock showing current time">
+    <svg viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+      <title id="title">Analog Clock</title>
+      <desc id="desc">An analog watch updated every second with the current date on the lower dial.</desc>
+
+      <!-- Outer glow & face -->
+      <defs>
+        <radialGradient id="faceGrad" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#060a12" />
+        </radialGradient>
+        <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feOffset dx="0" dy="1" />
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1" />
+          <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .7 0" />
+          <feBlend in2="SourceGraphic" mode="multiply" />
+        </filter>
+      </defs>
+
+      <!-- Bezel -->
+      <circle cx="100" cy="100" r="95" fill="#0b111b" stroke="#1f2937" stroke-width="1.5" />
+      <!-- Face -->
+      <circle cx="100" cy="100" r="88" fill="url(#faceGrad)" filter="url(#innerShadow)" />
+
+      <!-- Hour numerals -->
+      <g id="numerals" text-anchor="middle" dominant-baseline="central" class="numeral"></g>
+
+      <!-- Ticks -->
+      <g id="ticks"></g>
+
+      <!-- Center pin shadow -->
+      <circle cx="100" cy="100" r="3.2" fill="#000" opacity=".3" />
+
+      <!-- Hands -->
+      <g id="hands" transform="translate(100,100)">
+        <!-- Hour hand -->
+        <g id="hourGroup">
+          <line id="hour" class="hand hand-hour" x1="0" y1="10" x2="0" y2="-40" />
+        </g>
+        <!-- Minute hand -->
+        <g id="minuteGroup">
+          <line id="minute" class="hand hand-minute" x1="0" y1="12" x2="0" y2="-60" />
+        </g>
+        <!-- Second hand with tail -->
+        <g id="secondGroup" class="sweep">
+          <line id="secondTail" class="hand hand-tail" x1="0" y1="8" x2="0" y2="20" />
+          <line id="second" class="hand hand-second" x1="0" y1="12" x2="0" y2="-70" />
+        </g>
+        <!-- Center cap -->
+        <circle class="center-cap" r="2.2" />
+      </g>
+
+      <!-- Branding & date area -->
+      <text x="100" y="120" class="brand" text-anchor="middle">SASD • PRECISION</text>
+      <rect x="62" y="126" width="76" height="20" rx="4" ry="4" fill="#0a1220" stroke="#1f2937" opacity=".9"/>
+      <text id="dateText" x="100" y="138" class="dateText" text-anchor="middle">—</text>
+    </svg>
+  </div>
+
+  <script>
+    (function(){
+      const ticks = document.getElementById('ticks');
+      const numerals = document.getElementById('numerals');
+      const hourGroup = document.getElementById('hourGroup');
+      const minuteGroup = document.getElementById('minuteGroup');
+      const secondGroup = document.getElementById('secondGroup');
+      const dateText = document.getElementById('dateText');
+
+      // Build tick marks and numerals once
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 8 : 4.5;
+        const w = isHour ? 1.8 : 0.8;
+        const r1 = 82; // inner radius of ticks
+        const r2 = r1 + len;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const rad = angle * Math.PI / 180;
+        const x1 = 100 + r1 * Math.sin(rad);
+        const y1 = 100 - r1 * Math.cos(rad);
+        const x2 = 100 + r2 * Math.sin(rad);
+        const y2 = 100 - r2 * Math.cos(rad);
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        tick.setAttribute('class', 'tick');
+        tick.setAttribute('stroke-width', w);
+        ticks.appendChild(tick);
+
+        if (isHour) {
+          const hour = i/5 === 0 ? 12 : i/5;
+          const numR = 67;
+          const nx = 100 + numR * Math.sin(rad);
+          const ny = 100 - numR * Math.cos(rad);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.textContent = hour;
+          t.setAttribute('x', nx);
+          t.setAttribute('y', ny + 1.0);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('class', 'numeral');
+          numerals.appendChild(t);
+        }
+      }
+
+      // Format date like: Fri, 31 Oct 2025
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+      function setRotation(elGroup, angle){
+        // Rotate groups around (0,0) which is already translated to center (100,100)
+        elGroup.setAttribute('transform', `rotate(${angle})`);
+      }
+
+      function update(){
+        const now = new Date();
+        const s = now.getSeconds();
+        const m = now.getMinutes();
+        const h = now.getHours() % 12;
+
+        const secondAngle = s * 6; // 360/60
+        const minuteAngle = m * 6 + s * 0.1; // 6 deg per min + 0.1 per sec
+        const hourAngle = h * 30 + m * 0.5 + s * (0.5/60); // 30 per hour, 0.5 per min, tiny per sec
+
+        setRotation(secondGroup, secondAngle);
+        setRotation(minuteGroup, minuteAngle);
+        setRotation(hourGroup, hourAngle);
+
+        dateText.textContent = dateFormatter.format(now);
+      }
+
+      // Keep updates aligned to the next whole second
+      function startTicker(){
+        update();
+        const now = Date.now();
+        const delay = 1000 - (now % 1000);
+        setTimeout(() => {
+          update();
+          timer = setInterval(update, 1000);
+        }, delay);
+      }
+
+      let timer = null;
+      startTicker();
+
+      // Pause updates when the tab is hidden (saves battery/CPU)
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+          if (timer) { clearInterval(timer); timer = null; }
+        } else {
+          startTicker();
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
+
+
+--- 8< ---
+
+<!doctype html>
+<!-- seconds sweep smoothly -->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fullscreen SVG Analog Watch</title>
+  <style>
+    :root{
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --accent: #38bdf8;
+      --tick: #94a3b8;
+      --face: #0b1220;
+      --text: #e5e7eb;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% 20%, var(--bg2), var(--bg1));
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    .wrap {
+      width: min(92vmin, 100vw);
+      aspect-ratio: 1/1;
+      display: grid;
+      place-items: center;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    .brand { font-weight: 600; letter-spacing: 2px; font-size: 6px; fill: var(--tick); }
+    .dateText { font-weight: 600; font-size: 8px; fill: var(--text); }
+    .numeral { font-weight: 700; font-size: 13px; fill: var(--text); }
+    .tick { stroke: var(--tick); stroke-linecap: round; }
+    .hand { stroke-linecap: round; transition: transform 0.1s linear; transform-origin: center; }
+    .hand-hour { stroke: #e2e8f0; stroke-width: 2.8; }
+    .hand-minute { stroke: #cbd5e1; stroke-width: 2; }
+    .hand-second { stroke: var(--accent); stroke-width: 1.2; transition: transform 0.1s linear; }
+    .hand-tail { stroke: var(--accent); stroke-width: 1; opacity: .6; transition: transform 0.1s linear; }
+    .center-cap { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap" aria-label="Analog clock showing current time">
+    <svg viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+      <title id="title">Analog Clock</title>
+      <desc id="desc">An analog watch updated every second with a smooth sweeping second hand and the current date below the hands.</desc>
+
+      <defs>
+        <radialGradient id="faceGrad" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#060a12" />
+        </radialGradient>
+      </defs>
+
+      <circle cx="100" cy="100" r="95" fill="#0b111b" stroke="#1f2937" stroke-width="1.5" />
+      <circle cx="100" cy="100" r="88" fill="url(#faceGrad)" />
+
+      <g id="numerals" text-anchor="middle" dominant-baseline="central" class="numeral"></g>
+      <g id="ticks"></g>
+      <circle cx="100" cy="100" r="3.2" fill="#000" opacity=".3" />
+
+      <g id="hands" transform="translate(100,100)">
+        <g id="hourGroup">
+          <line id="hour" class="hand hand-hour" x1="0" y1="10" x2="0" y2="-40" />
+        </g>
+        <g id="minuteGroup">
+          <line id="minute" class="hand hand-minute" x1="0" y1="12" x2="0" y2="-60" />
+        </g>
+        <g id="secondGroup" class="sweep">
+          <line id="secondTail" class="hand hand-tail" x1="0" y1="8" x2="0" y2="20" />
+          <line id="second" class="hand hand-second" x1="0" y1="12" x2="0" y2="-70" />
+        </g>
+        <circle class="center-cap" r="2.2" />
+      </g>
+
+      <text x="100" y="120" class="brand" text-anchor="middle">SASD • PRECISION</text>
+      <g id="dateGroup">
+        <rect x="62" y="126" width="76" height="20" rx="4" ry="4" fill="#0a1220" stroke="#1f2937" opacity=".9"/>
+        <text id="dateText" x="100" y="138" class="dateText" text-anchor="middle">—</text>
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    (function(){
+      const ticks = document.getElementById('ticks');
+      const numerals = document.getElementById('numerals');
+      const hourGroup = document.getElementById('hourGroup');
+      const minuteGroup = document.getElementById('minuteGroup');
+      const secondGroup = document.getElementById('secondGroup');
+      const dateText = document.getElementById('dateText');
+      const hands = document.getElementById('hands');
+      const dateGroup = document.getElementById('dateGroup');
+
+      hands.after(dateGroup);
+
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 8 : 4.5;
+        const w = isHour ? 1.8 : 0.8;
+        const r1 = 82;
+        const r2 = r1 + len;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const rad = angle * Math.PI / 180;
+        const x1 = 100 + r1 * Math.sin(rad);
+        const y1 = 100 - r1 * Math.cos(rad);
+        const x2 = 100 + r2 * Math.sin(rad);
+        const y2 = 100 - r2 * Math.cos(rad);
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        tick.setAttribute('class', 'tick');
+        tick.setAttribute('stroke-width', w);
+        ticks.appendChild(tick);
+
+        if (isHour) {
+          const hour = i/5 === 0 ? 12 : i/5;
+          const numR = 67;
+          const nx = 100 + numR * Math.sin(rad);
+          const ny = 100 - numR * Math.cos(rad);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.textContent = hour;
+          t.setAttribute('x', nx);
+          t.setAttribute('y', ny + 1.0);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('class', 'numeral');
+          numerals.appendChild(t);
+        }
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+
+      function setRotation(elGroup, angle){
+        elGroup.style.transform = `rotate(${angle}deg)`;
+      }
+
+      function update(){
+        const now = new Date();
+        const ms = now.getMilliseconds();
+        const s = now.getSeconds() + ms / 1000;
+        const m = now.getMinutes() + s / 60;
+        const h = (now.getHours() % 12) + m / 60;
+
+        const secondAngle = s * 6;
+        const minuteAngle = m * 6;
+        const hourAngle = h * 30;
+
+        setRotation(secondGroup, secondAngle);
+        setRotation(minuteGroup, minuteAngle);
+        setRotation(hourGroup, hourAngle);
+
+        dateText.textContent = dateFormatter.format(now);
+
+        requestAnimationFrame(update);
+      }
+
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>
+
+--- 8< ---
+
+<!doctype html>
+<!-- 
+A gentle fade for the date when the day changes (about 400 ms), and fixed the stacking 
+so the brand and date render beneath the hands in all browsers (including Edge).
+If you still see the date/brand on top, please hard-refresh (Ctrl+F5) because Edge may 
+cache aggressively. About the “Fri, 31 Oct 2015” you saw: the clock uses your system time. 
+If the year looks wrong, double-check the OS/browser date settings. If you’d prefer, I can 
+also show a time zone label or fetch time from a server to avoid local clock drift.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fullscreen SVG Analog Watch</title>
+  <style>
+    :root{
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --accent: #38bdf8;
+      --tick: #94a3b8;
+      --face: #0b1220;
+      --text: #e5e7eb;
+    }
+    html, body {
+      height: 100%;
+    }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% 20%, var(--bg2), var(--bg1));
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    .wrap {
+      width: min(92vmin, 100vw);
+      aspect-ratio: 1/1;
+      display: grid;
+      place-items: center;
+    }
+    svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 30px rgba(0,0,0,.6));
+    }
+    .brand { font-weight: 600; letter-spacing: 2px; font-size: 6px; fill: var(--tick); }
+    .dateText { font-weight: 600; font-size: 8px; fill: var(--text); transition: opacity 400ms ease; }
+    .numeral { font-weight: 700; font-size: 13px; fill: var(--text); }
+    .tick { stroke: var(--tick); stroke-linecap: round; }
+    .hand { stroke-linecap: round; transition: transform 0.1s linear; transform-origin: center; }
+    .hand-hour { stroke: #e2e8f0; stroke-width: 2.8; }
+    .hand-minute { stroke: #cbd5e1; stroke-width: 2; }
+    .hand-second { stroke: var(--accent); stroke-width: 1.2; transition: transform 0.1s linear; }
+    .hand-tail { stroke: var(--accent); stroke-width: 1; opacity: .6; transition: transform 0.1s linear; }
+    .center-cap { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap" aria-label="Analog clock showing current time">
+    <svg viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+      <title id="title">Analog Clock</title>
+      <desc id="desc">An analog watch updated every second with a smooth sweeping second hand and the current date below the hands.</desc>
+
+      <defs>
+        <radialGradient id="faceGrad" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#060a12" />
+        </radialGradient>
+      </defs>
+
+      <circle cx="100" cy="100" r="95" fill="#0b111b" stroke="#1f2937" stroke-width="1.5" />
+      <circle cx="100" cy="100" r="88" fill="url(#faceGrad)" />
+
+      <g id="numerals" text-anchor="middle" dominant-baseline="central" class="numeral"></g>
+      <g id="ticks"></g>
+      <circle cx="100" cy="100" r="3.2" fill="#000" opacity=".3" />
+
+      <text x="100" y="120" class="brand" text-anchor="middle">SASD • PRECISION</text>
+      <g id="dateGroup">
+        <rect x="62" y="126" width="76" height="20" rx="4" ry="4" fill="#0a1220" stroke="#1f2937" opacity=".9"/>
+        <text id="dateText" x="100" y="138" class="dateText" text-anchor="middle">—</text>
+      </g>
+
+      <g id="hands" transform="translate(100,100)">
+        <g id="hourGroup">
+          <line id="hour" class="hand hand-hour" x1="0" y1="10" x2="0" y2="-40" />
+        </g>
+        <g id="minuteGroup">
+          <line id="minute" class="hand hand-minute" x1="0" y1="12" x2="0" y2="-60" />
+        </g>
+        <g id="secondGroup" class="sweep">
+          <line id="secondTail" class="hand hand-tail" x1="0" y1="8" x2="0" y2="20" />
+          <line id="second" class="hand hand-second" x1="0" y1="12" x2="0" y2="-70" />
+        </g>
+        <circle class="center-cap" r="2.2" />
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    (function(){
+      const ticks = document.getElementById('ticks');
+      const numerals = document.getElementById('numerals');
+      const hourGroup = document.getElementById('hourGroup');
+      const minuteGroup = document.getElementById('minuteGroup');
+      const secondGroup = document.getElementById('secondGroup');
+      const dateText = document.getElementById('dateText');
+      const hands = document.getElementById('hands');
+      const dateGroup = document.getElementById('dateGroup');
+
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 8 : 4.5;
+        const w = isHour ? 1.8 : 0.8;
+        const r1 = 82;
+        const r2 = r1 + len;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const rad = angle * Math.PI / 180;
+        const x1 = 100 + r1 * Math.sin(rad);
+        const y1 = 100 - r1 * Math.cos(rad);
+        const x2 = 100 + r2 * Math.sin(rad);
+        const y2 = 100 - r2 * Math.cos(rad);
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        tick.setAttribute('class', 'tick');
+        tick.setAttribute('stroke-width', w);
+        ticks.appendChild(tick);
+
+        if (isHour) {
+          const hour = i/5 === 0 ? 12 : i/5;
+          const numR = 67;
+          const nx = 100 + numR * Math.sin(rad);
+          const ny = 100 - numR * Math.cos(rad);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.textContent = hour;
+          t.setAttribute('x', nx);
+          t.setAttribute('y', ny + 1.0);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('class', 'numeral');
+          numerals.appendChild(t);
+        }
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      let lastDayKey = '';
+
+      function setRotation(elGroup, angle){
+        elGroup.style.transform = `rotate(${angle}deg)`;
+      }
+
+      function update(){
+        const now = new Date();
+        const ms = now.getMilliseconds();
+        const s = now.getSeconds() + ms / 1000;
+        const m = now.getMinutes() + s / 60;
+        const h = (now.getHours() % 12) + m / 60;
+
+        const secondAngle = s * 6;
+        const minuteAngle = m * 6;
+        const hourAngle = h * 30;
+
+        setRotation(secondGroup, secondAngle);
+        setRotation(minuteGroup, minuteAngle);
+        setRotation(hourGroup, hourAngle);
+
+        const dayKey = now.toDateString();
+        if (dayKey !== lastDayKey) {
+          // Fade out, swap text, fade in
+          dateText.style.opacity = 0;
+          // Allow style to apply before changing text
+          setTimeout(() => {
+            dateText.textContent = dateFormatter.format(now);
+            dateText.style.opacity = 1;
+          }, 120);
+          lastDayKey = dayKey;
+        }
+
+        requestAnimationFrame(update);
+      }
+
+      // Initialize once so the date is set immediately
+      (function init(){
+        const now = new Date();
+        lastDayKey = now.toDateString();
+        dateText.textContent = dateFormatter.format(now);
+      })();
+
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>
+
+--- 8< ---
+
+<!doctype html>
+<html lang="en">
+<!-- 
+A time-zone label (IANA name + UTC offset) under the date, e.g. Europe/Berlin UTC+01:00.
+A server-time sync that fetches UTC from worldtimeapi.org and computes a drift offset so 
+the clock stays accurate even if the local system clock is off. It re-syncs every 10 minutes 
+and whenever the tab becomes visible again. If the fetch fails, it gracefully falls back to 
+your local time.
+-->
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fullscreen SVG Analog Watch</title>
+  <style>
+    :root{
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --accent: #38bdf8;
+      --tick: #94a3b8;
+      --face: #0b1220;
+      --text: #e5e7eb;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% 20%, var(--bg2), var(--bg1));
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    .wrap { width: min(92vmin, 100vw); aspect-ratio: 1/1; display: grid; place-items: center; }
+    svg { width: 100%; height: 100%; filter: drop-shadow(0 10px 30px rgba(0,0,0,.6)); }
+
+    .brand { font-weight: 600; letter-spacing: 2px; font-size: 6px; fill: var(--tick); }
+    .dateText { font-weight: 600; font-size: 8px; fill: var(--text); transition: opacity 400ms ease; }
+    .tzText { font-weight: 600; font-size: 6.5px; fill: var(--tick); }
+    .numeral { font-weight: 700; font-size: 13px; fill: var(--text); }
+    .tick { stroke: var(--tick); stroke-linecap: round; }
+    .hand { stroke-linecap: round; transition: transform 0.1s linear; transform-origin: center; }
+    .hand-hour { stroke: #e2e8f0; stroke-width: 2.8; }
+    .hand-minute { stroke: #cbd5e1; stroke-width: 2; }
+    .hand-second { stroke: var(--accent); stroke-width: 1.2; transition: transform 0.1s linear; }
+    .hand-tail { stroke: var(--accent); stroke-width: 1; opacity: .6; transition: transform 0.1s linear; }
+    .center-cap { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap" aria-label="Analog clock showing current time">
+    <svg viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+      <title id="title">Analog Clock</title>
+      <desc id="desc">An analog watch updated every second with a smooth sweeping second hand and the current date below the hands.</desc>
+
+      <defs>
+        <radialGradient id="faceGrad" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#060a12" />
+        </radialGradient>
+      </defs>
+
+      <circle cx="100" cy="100" r="95" fill="#0b111b" stroke="#1f2937" stroke-width="1.5" />
+      <circle cx="100" cy="100" r="88" fill="url(#faceGrad)" />
+
+      <g id="numerals" text-anchor="middle" dominant-baseline="central" class="numeral"></g>
+      <g id="ticks"></g>
+      <circle cx="100" cy="100" r="3.2" fill="#000" opacity=".3" />
+
+      <text x="100" y="120" class="brand" text-anchor="middle">SASD • PRECISION</text>
+      <g id="dateGroup">
+        <rect x="62" y="126" width="76" height="26" rx="4" ry="4" fill="#0a1220" stroke="#1f2937" opacity=".9"/>
+        <text id="dateText" x="100" y="136" class="dateText" text-anchor="middle">—</text>
+        <text id="tzText" x="100" y="144" class="tzText" text-anchor="middle">—</text>
+      </g>
+
+      <g id="hands" transform="translate(100,100)">
+        <g id="hourGroup">
+          <line id="hour" class="hand hand-hour" x1="0" y1="10" x2="0" y2="-40" />
+        </g>
+        <g id="minuteGroup">
+          <line id="minute" class="hand hand-minute" x1="0" y1="12" x2="0" y2="-60" />
+        </g>
+        <g id="secondGroup" class="sweep">
+          <line id="secondTail" class="hand hand-tail" x1="0" y1="8" x2="0" y2="20" />
+          <line id="second" class="hand hand-second" x1="0" y1="12" x2="0" y2="-70" />
+        </g>
+        <circle class="center-cap" r="2.2" />
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    (function(){
+      const ticks = document.getElementById('ticks');
+      const numerals = document.getElementById('numerals');
+      const hourGroup = document.getElementById('hourGroup');
+      const minuteGroup = document.getElementById('minuteGroup');
+      const secondGroup = document.getElementById('secondGroup');
+      const dateText = document.getElementById('dateText');
+      const tzText = document.getElementById('tzText');
+
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 8 : 4.5;
+        const w = isHour ? 1.8 : 0.8;
+        const r1 = 82;
+        const r2 = r1 + len;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const rad = angle * Math.PI / 180;
+        const x1 = 100 + r1 * Math.sin(rad);
+        const y1 = 100 - r1 * Math.cos(rad);
+        const x2 = 100 + r2 * Math.sin(rad);
+        const y2 = 100 - r2 * Math.cos(rad);
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        tick.setAttribute('class', 'tick');
+        tick.setAttribute('stroke-width', w);
+        ticks.appendChild(tick);
+
+        if (isHour) {
+          const hour = i/5 === 0 ? 12 : i/5;
+          const numR = 67;
+          const nx = 100 + numR * Math.sin(rad);
+          const ny = 100 - numR * Math.cos(rad);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.textContent = hour;
+          t.setAttribute('x', nx);
+          t.setAttribute('y', ny + 1.0);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('class', 'numeral');
+          numerals.appendChild(t);
+        }
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      let lastDayKey = '';
+      let lastMinuteKey = -1;
+      let driftMs = 0; // serverUTC - localUTC
+
+      function setRotation(elGroup, angle){
+        elGroup.style.transform = `rotate(${angle}deg)`;
+      }
+
+      function update(){
+        const localNow = Date.now();
+        const adjusted = localNow + driftMs; // corrected for server UTC
+        const now = new Date(adjusted);
+
+        const ms = now.getMilliseconds();
+        const s = now.getSeconds() + ms / 1000;
+        const m = now.getMinutes() + s / 60;
+        const h = (now.getHours() % 12) + m / 60;
+
+        const secondAngle = s * 6;
+        const minuteAngle = m * 6;
+        const hourAngle = h * 30;
+
+        setRotation(secondGroup, secondAngle);
+        setRotation(minuteGroup, minuteAngle);
+        setRotation(hourGroup, hourAngle);
+
+        const dayKey = now.toDateString();
+        if (dayKey !== lastDayKey) {
+          dateText.style.opacity = 0;
+          setTimeout(() => {
+            dateText.textContent = dateFormatter.format(now);
+            dateText.style.opacity = 1;
+          }, 120);
+          lastDayKey = dayKey;
+        }
+
+        // Update TZ label at most once per minute (handles DST changes too)
+        const minuteKey = Math.floor(adjusted / 60000);
+        if (minuteKey !== lastMinuteKey) {
+          const tzName = Intl.DateTimeFormat().resolvedOptions().timeZone; // IANA, e.g., Europe/Berlin
+          const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: 'shortOffset' }).formatToParts(now);
+          const tzOffset = parts.find(p => p.type === 'timeZoneName')?.value || '';
+          tzText.textContent = `${tzName} ${tzOffset}`;
+          lastMinuteKey = minuteKey;
+        }
+
+        requestAnimationFrame(update);
+      }
+
+      // Initialize once so the date is set immediately
+      (function init(){
+        const now = new Date();
+        lastDayKey = now.toDateString();
+        dateText.textContent = dateFormatter.format(now);
+      })();
+
+      // Fetch trusted UTC time to avoid local clock drift
+      async function syncServerTime(){
+        try{
+          const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' });
+          if(!res.ok) throw new Error('time fetch failed');
+          const data = await res.json();
+          const serverMs = (typeof data.unixtime === 'number') ? data.unixtime * 1000 : Date.parse(data.datetime);
+          const localMs = Date.now();
+          driftMs = serverMs - localMs; // positive => local clock is behind
+        } catch(err){
+          console.warn('Time sync failed:', err);
+        }
+      }
+
+      // Initial sync and periodic resync every 10 minutes
+      syncServerTime();
+      setInterval(syncServerTime, 10 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) syncServerTime(); });
+
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>
+
+--- 8< ---
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fullscreen SVG Analog Watch</title>
+  <style>
+    :root{
+      --bg1: #0f172a;
+      --bg2: #111827;
+      --accent: #38bdf8;
+      --tick: #94a3b8;
+      --face: #0b1220;
+      --text: #e5e7eb;
+    }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1200px 800px at 50% 20%, var(--bg2), var(--bg1));
+      display: grid;
+      place-items: center;
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, sans-serif;
+    }
+    .wrap { width: min(92vmin, 100vw); aspect-ratio: 1/1; display: grid; place-items: center; }
+    svg { width: 100%; height: 100%; filter: drop-shadow(0 10px 30px rgba(0,0,0,.6)); }
+
+    .brand { font-weight: 600; letter-spacing: 2px; font-size: 6px; fill: var(--tick); }
+    .dateText { font-weight: 600; font-size: 8px; fill: var(--text); transition: opacity 400ms ease; }
+    .tzText { font-weight: 600; font-size: 6.5px; fill: var(--tick); }
+    .numeral { font-weight: 700; font-size: 13px; fill: var(--text); }
+    .tick { stroke: var(--tick); stroke-linecap: round; }
+    .hand { stroke-linecap: round; transition: transform 0.1s linear; transform-origin: center; }
+    .hand-hour { stroke: #e2e8f0; stroke-width: 2.8; }
+    .hand-minute { stroke: #cbd5e1; stroke-width: 2; }
+    .hand-second { stroke: var(--accent); stroke-width: 1.2; transition: transform 0.1s linear; }
+    .hand-tail { stroke: var(--accent); stroke-width: 1; opacity: .6; transition: transform 0.1s linear; }
+    .center-cap { fill: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="wrap" aria-label="Analog clock showing current time">
+    <svg viewBox="0 0 200 200" role="img" aria-labelledby="title desc">
+      <title id="title">Analog Clock</title>
+      <desc id="desc">An analog watch updated every second with a smooth sweeping second hand and the current date below the hands.</desc>
+
+      <defs>
+        <radialGradient id="faceGrad" cx="50%" cy="45%" r="60%">
+          <stop offset="0%" stop-color="#0f172a" />
+          <stop offset="100%" stop-color="#060a12" />
+        </radialGradient>
+      </defs>
+
+      <circle cx="100" cy="100" r="95" fill="#0b111b" stroke="#1f2937" stroke-width="1.5" />
+      <circle cx="100" cy="100" r="88" fill="url(#faceGrad)" />
+
+      <g id="numerals" text-anchor="middle" dominant-baseline="central" class="numeral"></g>
+      <g id="ticks"></g>
+      <circle cx="100" cy="100" r="3.2" fill="#000" opacity=".3" />
+
+      <text x="100" y="120" class="brand" text-anchor="middle">SASD • PRECISION</text>
+      <g id="dateGroup">
+        <rect x="62" y="126" width="76" height="26" rx="4" ry="4" fill="#0a1220" stroke="#1f2937" opacity=".9"/>
+        <text id="dateText" x="100" y="136" class="dateText" text-anchor="middle">—</text>
+        <text id="tzText" x="100" y="144" class="tzText" text-anchor="middle">—</text>
+      </g>
+
+      <g id="hands" transform="translate(100,100)">
+        <g id="hourGroup">
+          <line id="hour" class="hand hand-hour" x1="0" y1="10" x2="0" y2="-40" />
+        </g>
+        <g id="minuteGroup">
+          <line id="minute" class="hand hand-minute" x1="0" y1="12" x2="0" y2="-60" />
+        </g>
+        <g id="secondGroup" class="sweep">
+          <line id="secondTail" class="hand hand-tail" x1="0" y1="8" x2="0" y2="20" />
+          <line id="second" class="hand hand-second" x1="0" y1="12" x2="0" y2="-70" />
+        </g>
+        <circle class="center-cap" r="2.2" />
+      </g>
+    </svg>
+  </div>
+
+  <script>
+    (function(){
+      const params = new URLSearchParams(window.location.search);
+      const forcedTz = params.get('tz'); // optional ?tz=America/New_York
+
+      const ticks = document.getElementById('ticks');
+      const numerals = document.getElementById('numerals');
+      const hourGroup = document.getElementById('hourGroup');
+      const minuteGroup = document.getElementById('minuteGroup');
+      const secondGroup = document.getElementById('secondGroup');
+      const dateText = document.getElementById('dateText');
+      const tzText = document.getElementById('tzText');
+
+      for (let i = 0; i < 60; i++) {
+        const angle = i * 6;
+        const isHour = i % 5 === 0;
+        const len = isHour ? 8 : 4.5;
+        const w = isHour ? 1.8 : 0.8;
+        const r1 = 82;
+        const r2 = r1 + len;
+        const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const rad = angle * Math.PI / 180;
+        const x1 = 100 + r1 * Math.sin(rad);
+        const y1 = 100 - r1 * Math.cos(rad);
+        const x2 = 100 + r2 * Math.sin(rad);
+        const y2 = 100 - r2 * Math.cos(rad);
+        tick.setAttribute('x1', x1);
+        tick.setAttribute('y1', y1);
+        tick.setAttribute('x2', x2);
+        tick.setAttribute('y2', y2);
+        tick.setAttribute('class', 'tick');
+        tick.setAttribute('stroke-width', w);
+        ticks.appendChild(tick);
+
+        if (isHour) {
+          const hour = i/5 === 0 ? 12 : i/5;
+          const numR = 67;
+          const nx = 100 + numR * Math.sin(rad);
+          const ny = 100 - numR * Math.cos(rad);
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.textContent = hour;
+          t.setAttribute('x', nx);
+          t.setAttribute('y', ny + 1.0);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('dominant-baseline', 'central');
+          t.setAttribute('class', 'numeral');
+          numerals.appendChild(t);
+        }
+      }
+
+      const dateFormatter = new Intl.DateTimeFormat(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+      let lastDayKey = '';
+      let lastMinuteKey = -1;
+      let driftMs = 0;
+
+      function setRotation(elGroup, angle){ elGroup.style.transform = `rotate(${angle}deg)`; }
+
+      function update(){
+        const localNow = Date.now();
+        const adjusted = localNow + driftMs;
+        const now = new Date(adjusted);
+
+        const ms = now.getMilliseconds();
+        const s = now.getSeconds() + ms / 1000;
+        const m = now.getMinutes() + s / 60;
+        const h = (now.getHours() % 12) + m / 60;
+
+        const secondAngle = s * 6;
+        const minuteAngle = m * 6;
+        const hourAngle = h * 30;
+
+        setRotation(secondGroup, secondAngle);
+        setRotation(minuteGroup, minuteAngle);
+        setRotation(hourGroup, hourAngle);
+
+        const dayKey = now.toDateString();
+        if (dayKey !== lastDayKey) {
+          dateText.style.opacity = 0;
+          setTimeout(() => {
+            dateText.textContent = dateFormatter.format(now);
+            dateText.style.opacity = 1;
+          }, 120);
+          lastDayKey = dayKey;
+        }
+
+        const minuteKey = Math.floor(adjusted / 60000);
+        if (minuteKey !== lastMinuteKey) {
+          const tzName = forcedTz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+          const parts = new Intl.DateTimeFormat(undefined, { timeZone: tzName, timeZoneName: 'shortOffset' }).formatToParts(now);
+          const tzOffset = parts.find(p => p.type === 'timeZoneName')?.value || '';
+          tzText.textContent = `${tzName} ${tzOffset}`;
+          lastMinuteKey = minuteKey;
+        }
+
+        requestAnimationFrame(update);
+      }
+
+      (function init(){
+        const now = new Date();
+        lastDayKey = now.toDateString();
+        dateText.textContent = dateFormatter.format(now);
+      })();
+
+      async function syncServerTime(){
+        try{
+          const res = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC', { cache: 'no-store' });
+          if(!res.ok) throw new Error('time fetch failed');
+          const data = await res.json();
+          const serverMs = (typeof data.unixtime === 'number') ? data.unixtime * 1000 : Date.parse(data.datetime);
+          const localMs = Date.now();
+          driftMs = serverMs - localMs;
+        } catch(err){ console.warn('Time sync failed:', err); }
+      }
+
+      syncServerTime();
+      setInterval(syncServerTime, 10 * 60 * 1000);
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) syncServerTime(); });
+
+      requestAnimationFrame(update);
+    })();
+  </script>
+</body>
+</html>
+
